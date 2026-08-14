@@ -1,0 +1,8 @@
+import { env } from '$env/dynamic/public';
+
+const PUBLIC_SUPABASE_URL = env.PUBLIC_SUPABASE_URL ?? '';
+const PUBLIC_SUPABASE_PUBLISHABLE_KEY = env.PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+
+export const isSupabaseConfigured = Boolean(PUBLIC_SUPABASE_URL && PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+
+export { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL };

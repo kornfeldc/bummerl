@@ -7,19 +7,17 @@
 	import { Card } from '$lib/components/ui/card';
 
 	let { data, form } = $props();
-	let selectedPlayerId = $state<string | null>(null);
+	let selectedTeamId = $state<string | null>(null);
 	let spritz = $state(false);
 	let selectedAction = $state<PointAction | null>(null);
 	let scoreSheetOpen = $state(false);
-	const players = $derived(
-		[...data.game.game_players].sort((a, b) => a.player_order - b.player_order)
-	);
+	const teams = $derived([...data.game.game_teams].sort((a, b) => a.team_order - b.team_order));
 	const activeRound = $derived(data.rounds.find((round) => round.status === 'active'));
 	const completedRounds = $derived(
 		data.rounds.filter((round) => round.status === 'completed').reverse()
 	);
 	const hasScoreEvents = $derived(data.rounds.some((round) => round.round_events.length > 0));
-	const selectedPlayer = $derived(players.find((player) => player.id === selectedPlayerId));
+	const selectedTeam = $derived(teams.find((team) => team.id === selectedTeamId));
 	const availablePointActionGroups = $derived(
 		pointActionGroups
 			.map((group) => ({
@@ -32,23 +30,32 @@
 	);
 	const selectedPoints = $derived(selectedAction ? selectedAction.points * (spritz ? 2 : 1) : 0);
 
-	function scoreFor(playerId: string) {
+	function scoreFor(teamId: string, round = activeRound) {
+		const team = teams.find((candidate) => candidate.id === teamId);
+		const playerIds = team?.game_players.map((player) => player.id) ?? [];
 		return (
-			activeRound?.round_player_scores.find((score) => score.player_id === playerId)
+			round?.round_player_scores.find((score) => playerIds.includes(score.player_id))
 				?.remaining_points ?? data.game.starting_points
 		);
 	}
 
-	function playerName(playerId: string | null) {
-		return players.find((player) => player.id === playerId)?.name ?? 'Unbekannt';
+	function teamName(teamId: string | null) {
+		const team = teams.find((candidate) => candidate.id === teamId);
+		return team?.game_players.map((player) => player.name).join(' + ') ?? 'Unbekannt';
 	}
 
-	function selectPlayer(playerId: string) {
-		selectedPlayerId = selectedPlayerId === playerId ? null : playerId;
+	function gameTitle() {
+		return teams
+			.map((team) => team.game_players.map((player) => player.name).join(' + '))
+			.join(' · ');
+	}
+
+	function selectTeam(teamId: string) {
+		selectedTeamId = selectedTeamId === teamId ? null : teamId;
 	}
 
 	function resetScoreForm() {
-		selectedPlayerId = null;
+		selectedTeamId = null;
 		spritz = false;
 		selectedAction = null;
 	}
@@ -71,9 +78,21 @@
 
 	function eventTargets(
 		event: { round_event_players: Array<{ player_id: string }> },
-		playerId: string
+		team: { game_players: Array<{ id: string }> }
 	) {
-		return event.round_event_players.some((target) => target.player_id === playerId);
+		return team.game_players.some((player) =>
+			event.round_event_players.some((target) => target.player_id === player.id)
+		);
+	}
+
+	function bummerlTeamNames(round: (typeof data.rounds)[number]) {
+		if (!round.winner_team_id) return 'nicht erfasst';
+		const otherTeams = teams.filter((team) => team.id !== round.winner_team_id);
+		const highestScore = Math.max(...otherTeams.map((team) => scoreFor(team.id, round)));
+		return otherTeams
+			.filter((team) => scoreFor(team.id, round) === highestScore)
+			.map((team) => teamName(team.id))
+			.join(', ');
 	}
 
 	function pointActionClass(action: PointAction, category: 'low' | 'medium' | 'high') {
@@ -93,7 +112,7 @@
 </script>
 
 <svelte:head>
-	<title>{players.map((player) => player.name).join(' · ')} | bummerl</title>
+	<title>{gameTitle()} | bummerl</title>
 </svelte:head>
 
 <main class="mx-auto max-w-6xl px-3 py-5 sm:px-8 sm:py-14">
@@ -112,7 +131,7 @@
 			<h1
 				class="mt-1 truncate font-serif text-2xl font-semibold tracking-tight text-[#123d35] sm:mt-2 sm:text-5xl dark:text-[#f5f0e5]"
 			>
-				{players.map((player) => player.name).join(' · ')}
+				{gameTitle()}
 			</h1>
 		</div>
 		{#if activeRound}
@@ -154,14 +173,19 @@
 					<tr
 						class="border-b border-border text-xs font-bold tracking-[0.14em] text-muted-foreground uppercase"
 					>
-						{#each players as player (player.id)}
+						{#each teams as team (team.id)}
 							<th
 								class="px-1 py-3 text-center text-[0.65rem] leading-tight break-words sm:px-4 sm:py-5 sm:text-xs sm:tracking-[0.14em]"
 							>
-								{player.name}
+								<span class="block text-[0.55rem] tracking-normal text-muted-foreground sm:text-xs"
+									>Team {team.team_order}</span
+								>
+								<span class="mt-0.5 block"
+									>{team.game_players.map((player) => player.name).join(' + ')}</span
+								>
 								<span
 									class="mt-0.5 block min-h-3 text-[0.6rem] text-primary sm:mt-1 sm:min-h-4 sm:text-base"
-									>{'• '.repeat(player.bummerl_count)}</span
+									>{'• '.repeat(team.bummerl_count)}</span
 								>
 							</th>
 						{/each}
@@ -171,16 +195,13 @@
 					{#if activeRound}
 						{#each activeRound.round_events as event (event.id)}
 							<tr class="border-b border-border/50 last:border-0">
-								{#each players as player (player.id)}
+								{#each teams as team (team.id)}
 									<td
-										class="px-1 py-3 text-center text-sm font-semibold {eventTargets(
-											event,
-											player.id
-										)
+										class="px-1 py-3 text-center text-sm font-semibold {eventTargets(event, team)
 											? 'text-primary'
 											: 'text-muted-foreground/40'} sm:px-4 sm:py-4 sm:text-base"
 									>
-										{eventTargets(event, player.id) ? event.points : '—'}
+										{eventTargets(event, team) ? event.points : '—'}
 									</td>
 								{/each}
 							</tr>
@@ -190,13 +211,13 @@
 				{#if activeRound}
 					<tfoot>
 						<tr class="border-t-4 border-primary bg-[#123d35] dark:bg-[#0f2521]">
-							{#each players as player (player.id)}
+							{#each teams as team (team.id)}
 								<td
 									class="px-1 py-4 text-center font-serif text-3xl font-semibold {scoreFor(
-										player.id
+										team.id
 									) <= 0
 										? 'text-[#9de0b1]'
-										: 'text-[#fffaf2]'} sm:px-4 sm:py-5 sm:text-5xl">{scoreFor(player.id)}</td
+										: 'text-[#fffaf2]'} sm:px-4 sm:py-5 sm:text-5xl">{scoreFor(team.id)}</td
 								>
 							{/each}
 						</tr>
@@ -221,7 +242,7 @@
 					<p class="text-xs font-bold tracking-[0.15em] text-primary uppercase">Punkte eintragen</p>
 					<h2 class="mt-1 font-serif text-3xl font-semibold">Wie war die Runde?</h2>
 					<p class="mt-2 text-sm leading-6 text-muted-foreground">
-						Wähle einen Spieler und die Punktaktion, danach das Ergebnis.
+						Wähle ein Team und die Punktaktion, danach das Ergebnis.
 					</p>
 				</div>
 				<Minus size={22} class="mt-1 text-primary" />
@@ -234,7 +255,7 @@
 				class="mt-6 pb-20 sm:pb-0"
 			>
 				<input type="hidden" name="roundId" value={activeRound?.id ?? ''} />
-				<input type="hidden" name="selectedPlayerId" value={selectedPlayerId ?? ''} />
+				<input type="hidden" name="selectedTeamId" value={selectedTeamId ?? ''} />
 				<input
 					type="hidden"
 					name="action"
@@ -242,18 +263,21 @@
 				/>
 
 				<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-					{#each players as player (player.id)}
+					{#each teams as team (team.id)}
 						<button
 							type="button"
-							aria-pressed={selectedPlayerId === player.id}
-							class={selectedPlayerId === player.id
+							aria-pressed={selectedTeamId === team.id}
+							class={selectedTeamId === team.id
 								? 'min-h-16 rounded-xl border-2 border-primary bg-primary/10 px-3 py-3 text-left text-primary shadow-sm'
 								: 'min-h-16 rounded-xl border border-border bg-background px-3 py-3 text-left text-foreground transition hover:border-primary/50'}
-							onclick={() => selectPlayer(player.id)}
+							onclick={() => selectTeam(team.id)}
 						>
-							<span class="block truncate text-sm font-bold">{player.name}</span>
+							<span class="block text-xs font-semibold text-primary">Team {team.team_order}</span>
+							<span class="mt-1 block truncate text-sm font-bold"
+								>{team.game_players.map((player) => player.name).join(' + ')}</span
+							>
 							<span class="mt-1 block text-xs font-medium text-muted-foreground"
-								>{scoreFor(player.id)} Punkte</span
+								>{scoreFor(team.id)} Punkte</span
 							>
 						</button>
 					{/each}
@@ -287,12 +311,12 @@
 					{/each}
 				</div>
 
-				{#if selectedAction && selectedPlayer}
+				{#if selectedAction && selectedTeam}
 					<div
 						class="mt-5 rounded-xl border border-[#b6d0bb] bg-[#eaf4eb] px-4 py-3 text-sm leading-6 text-[#2c6c43] dark:border-[#31574b] dark:bg-[#21443b] dark:text-[#b4d3bf]"
 					>
 						<strong>{selectedAction.title}{spritz ? ' · Gspritzt' : ''}</strong>
-						ist für {selectedPlayer.name} vorbereitet: {Math.abs(selectedPoints)} Punkte.
+						ist für {teamName(selectedTeam.id)} vorbereitet: {Math.abs(selectedPoints)} Punkte.
 					</div>
 				{/if}
 
@@ -318,7 +342,7 @@
 						type="submit"
 						name="mode"
 						value="wins"
-						disabled={!selectedPlayerId || !selectedAction}
+						disabled={!selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-xl bg-[#2f8b59] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#267349] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#4da873] dark:text-[#10271b] dark:hover:bg-[#63bf89]"
 					>
 						Gewonnen
@@ -327,7 +351,7 @@
 						type="submit"
 						name="mode"
 						value="loses"
-						disabled={!selectedPlayerId || !selectedAction}
+						disabled={!selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-xl bg-[#c96638] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#b8562d] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#e58b58] dark:text-[#18241f] dark:hover:bg-[#ef9b69]"
 					>
 						Verloren
@@ -339,7 +363,7 @@
 						type="submit"
 						name="mode"
 						value="wins"
-						disabled={!selectedPlayerId || !selectedAction}
+						disabled={!selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-full bg-[#2f8b59] px-3 text-sm font-bold text-white shadow-[0_12px_30px_rgb(28_91_54_/_0.3)] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#4da873] dark:text-[#10271b]"
 					>
 						Gewonnen
@@ -348,7 +372,7 @@
 						type="submit"
 						name="mode"
 						value="loses"
-						disabled={!selectedPlayerId || !selectedAction}
+						disabled={!selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-full bg-[#c96638] px-3 text-sm font-bold text-white shadow-[0_12px_30px_rgb(80_45_25_/_0.28)] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#e58b58] dark:text-[#18241f]"
 					>
 						Verloren
@@ -418,25 +442,10 @@
 							Runde {round.round_number}
 						</p>
 						<p class="mt-2 text-lg font-semibold">
-							{playerName(round.winner_player_id)} hat gewonnen
+							{teamName(round.winner_team_id)} hat gewonnen
 						</p>
 						<p class="mt-1 text-sm text-muted-foreground">
-							Bummerl: {round.winner_player_id
-								? players
-										.filter(
-											(player) =>
-												player.id !== round.winner_player_id &&
-												round.round_player_scores.find((score) => score.player_id === player.id)
-													?.remaining_points ===
-													Math.max(
-														...round.round_player_scores
-															.filter((score) => score.player_id !== round.winner_player_id)
-															.map((score) => score.remaining_points)
-													)
-										)
-										.map((player) => player.name)
-										.join(', ')
-								: 'nicht erfasst'}
+							Bummerl: {bummerlTeamNames(round)}
 						</p>
 					</Card>
 				{/each}

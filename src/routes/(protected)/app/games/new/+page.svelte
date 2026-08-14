@@ -9,6 +9,14 @@
 	let playerCount = $state(2);
 	let playerNames = $state(['', '']);
 	let startingPoints = $state(7);
+	const playerGroups = $derived(
+		playerCount === 4
+			? [
+					[0, 1],
+					[2, 3]
+				]
+			: [Array.from({ length: playerCount }, (_, index) => index)]
+	);
 
 	function setPlayerCount(nextCount: number) {
 		playerCount = nextCount;
@@ -82,24 +90,45 @@
 				<input type="hidden" name="playerCount" value={playerCount} />
 			</fieldset>
 
-			<fieldset class="mt-6 space-y-3 sm:mt-8 sm:space-y-4">
-				<legend class="text-sm font-bold text-foreground">Spielernamen</legend>
-				{#each playerNames as name, index (index)}
-					<label class="block">
-						<span
-							class="mb-1.5 block text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-							>Spieler {index + 1}</span
-						>
-						<input
-							name="playerName"
-							bind:value={playerNames[index]}
-							aria-label={name ? `Name von ${name}` : `Name von Spieler ${index + 1}`}
-							required
-							maxlength="80"
-							placeholder={index === 0 ? 'z. B. Anna' : `Name von Spieler ${index + 1}`}
-							class="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground transition outline-none placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 sm:min-h-12 sm:px-4"
-						/>
-					</label>
+			<fieldset
+				class={playerCount === 4
+					? 'mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4'
+					: 'mt-6 space-y-3 sm:mt-8 sm:space-y-4'}
+			>
+				<legend class="text-sm font-bold text-foreground sm:col-span-2">Spielernamen</legend>
+				{#each playerGroups as group, groupIndex (groupIndex)}
+					<div
+						class={playerCount === 4
+							? 'rounded-2xl border border-border bg-background/60 p-3 sm:p-4'
+							: 'contents'}
+					>
+						{#if playerCount === 4}
+							<p class="mb-3 text-xs font-bold tracking-[0.14em] text-primary uppercase">
+								Team {groupIndex + 1}
+							</p>
+						{/if}
+						<div class="space-y-3">
+							{#each group as index (index)}
+								<label class="block">
+									<span
+										class="mb-1.5 block text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+										>Spieler {index + 1}</span
+									>
+									<input
+										name="playerName"
+										bind:value={playerNames[index]}
+										aria-label={playerNames[index]
+											? `Name von ${playerNames[index]}`
+											: `Name von Spieler ${index + 1}`}
+										required
+										maxlength="80"
+										placeholder={index === 0 ? 'z. B. Anna' : `Name von Spieler ${index + 1}`}
+										class="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-base text-foreground transition outline-none placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/20 sm:min-h-12 sm:px-4"
+									/>
+								</label>
+							{/each}
+						</div>
+					</div>
 				{/each}
 			</fieldset>
 

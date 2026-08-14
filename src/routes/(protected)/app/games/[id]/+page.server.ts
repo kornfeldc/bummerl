@@ -4,7 +4,15 @@ type GamePlayer = {
 	id: string;
 	name: string;
 	player_order: number;
+	team_id: string;
+};
+
+type GameTeam = {
+	id: string;
+	name: string;
+	team_order: number;
 	bummerl_count: number;
+	game_players: GamePlayer[];
 };
 
 type Game = {
@@ -13,7 +21,7 @@ type Game = {
 	starting_points: number;
 	started_at: string;
 	last_event_at: string;
-	game_players: GamePlayer[];
+	game_teams: GameTeam[];
 };
 
 type Round = {
@@ -21,7 +29,7 @@ type Round = {
 	round_number: number;
 	starting_points: number;
 	status: 'active' | 'completed';
-	winner_player_id: string | null;
+	winner_team_id: string | null;
 	started_at: string;
 	completed_at: string | null;
 	round_player_scores: Array<{ player_id: string; remaining_points: number }>;
@@ -40,7 +48,7 @@ export const load = async ({ locals, params }) => {
 	const { data: gameData, error: gameError } = await locals.supabase
 		.from('games')
 		.select(
-			'id, player_count, starting_points, started_at, last_event_at, game_players(id, name, player_order, bummerl_count)'
+			'id, player_count, starting_points, started_at, last_event_at, game_teams(id, name, team_order, bummerl_count, game_players(id, name, player_order, team_id))'
 		)
 		.eq('id', params.id)
 		.maybeSingle();
@@ -51,7 +59,7 @@ export const load = async ({ locals, params }) => {
 	const { data: roundData, error: roundError } = await locals.supabase
 		.from('rounds')
 		.select(
-			'id, round_number, starting_points, status, winner_player_id, started_at, completed_at, round_player_scores(player_id, remaining_points), round_events(id, title, points, created_at, round_event_players(player_id))'
+			'id, round_number, starting_points, status, winner_team_id, started_at, completed_at, round_player_scores(player_id, remaining_points), round_events(id, title, points, created_at, round_event_players(player_id))'
 		)
 		.eq('game_id', params.id)
 		.order('round_number', { ascending: true });
@@ -83,7 +91,7 @@ export const actions = {
 
 		const formData = await request.formData();
 		const action = formData.get('action');
-		const selectedPlayerId = formData.get('selectedPlayerId');
+		const selectedTeamId = formData.get('selectedTeamId');
 		const mode = formData.get('mode');
 		const spritz = formData.get('spritz') === 'on';
 		const { data: game, error: gameError } = await locals.supabase
@@ -99,11 +107,11 @@ export const actions = {
 
 		if (
 			typeof action !== 'string' ||
-			typeof selectedPlayerId !== 'string' ||
-			!selectedPlayerId ||
+			typeof selectedTeamId !== 'string' ||
+			!selectedTeamId ||
 			typeof mode !== 'string'
 		) {
-			return fail(400, { message: 'Wähle einen Spieler, eine Punktaktion und das Ergebnis aus.' });
+			return fail(400, { message: 'Wähle ein Team, eine Punktaktion und das Ergebnis aus.' });
 		}
 		const separatorIndex = action.lastIndexOf('|');
 		const title = action.slice(0, separatorIndex);
@@ -116,7 +124,7 @@ export const actions = {
 			p_round_id: formData.get('roundId'),
 			p_title: title,
 			p_points: points,
-			p_selected_player_id: selectedPlayerId,
+			p_selected_team_id: selectedTeamId,
 			p_mode: mode,
 			p_spritz: spritz
 		});

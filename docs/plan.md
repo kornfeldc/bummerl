@@ -45,7 +45,8 @@ Public routes include `/`, `/login`, and `/auth/callback`. Protected routes live
 Planned tables:
 
 - `games`: owner, player count, starting points, start/activity timestamps, archive timestamp
-- `game_players`: ordered player names and Bummerl totals
+- `game_teams`: explicit teams for four-player games, team order, and team Bummerl totals
+- `game_players`: ordered player names and team membership
 - `rounds`: round number, starting points, status, winner, completion timestamp
 - `round_events`: immutable title/point adjustments
 - `round_event_players`: players targeted by each adjustment
@@ -56,6 +57,9 @@ Every user-owned record must be protected by Supabase Row Level Security. Score 
 ## Game Rules
 
 - A game has two, three, or four players.
+- Two- and three-player games use one team per player.
+- Four-player games use two teams of two, assigned during setup.
+- Scores, point events, round winners, and Bummerl awards target teams. Team members share one remaining score.
 - Starting points default to 7 for two players and 24 for three or four players.
 - A custom starting count is allowed.
 - The player count is immutable after setup.

@@ -6,5 +6,5 @@
 </script>
 
 <svelte:head><link rel="icon" href="/favicon.svg" type="image/svg+xml" /></svelte:head>
-<ModeWatcher themeColors={{ light: '#123d35', dark: '#0f2521' }} />
+<ModeWatcher themeColors={{ light: '#123d35', dark: '#123d35' }} />
 {@render children()}

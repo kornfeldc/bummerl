@@ -177,9 +177,12 @@
 							<th
 								class="px-1 py-3 text-center text-[0.65rem] leading-tight break-words sm:px-4 sm:py-5 sm:text-xs sm:tracking-[0.14em]"
 							>
-								<span class="block text-[0.55rem] tracking-normal text-muted-foreground sm:text-xs"
-									>Team {team.team_order}</span
-								>
+								{#if data.game.player_count === 4}
+									<span
+										class="block text-[0.55rem] tracking-normal text-muted-foreground sm:text-xs"
+										>Team {team.team_order}</span
+									>
+								{/if}
 								<span class="mt-0.5 block"
 									>{team.game_players.map((player) => player.name).join(' + ')}</span
 								>
@@ -242,7 +245,8 @@
 					<p class="text-xs font-bold tracking-[0.15em] text-primary uppercase">Punkte eintragen</p>
 					<h2 class="mt-1 font-serif text-3xl font-semibold">Wie war die Runde?</h2>
 					<p class="mt-2 text-sm leading-6 text-muted-foreground">
-						Wähle ein Team und die Punktaktion, danach das Ergebnis.
+						Wähle {data.game.player_count === 4 ? 'ein Team' : 'einen Spieler'} und die Punktaktion, danach
+						das Ergebnis.
 					</p>
 				</div>
 				<Minus size={22} class="mt-1 text-primary" />
@@ -272,7 +276,9 @@
 								: 'min-h-16 rounded-xl border border-border bg-background px-3 py-3 text-left text-foreground transition hover:border-primary/50'}
 							onclick={() => selectTeam(team.id)}
 						>
-							<span class="block text-xs font-semibold text-primary">Team {team.team_order}</span>
+							{#if data.game.player_count === 4}
+								<span class="block text-xs font-semibold text-primary">Team {team.team_order}</span>
+							{/if}
 							<span class="mt-1 block truncate text-sm font-bold"
 								>{team.game_players.map((player) => player.name).join(' + ')}</span
 							>

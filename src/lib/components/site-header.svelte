@@ -8,7 +8,9 @@
 		$props();
 </script>
 
-<header class="relative z-10 border-b border-white/10 bg-[#123d35]/95 text-[#fffaf2] backdrop-blur">
+<header
+	class="safe-area-top sticky top-0 z-40 border-b border-white/10 bg-[#123d35]/95 text-[#fffaf2] backdrop-blur"
+>
 	<div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
 		<a href={resolve('/')} class="group flex items-center gap-3" aria-label="Bummerl Startseite">
 			<span

@@ -80,6 +80,10 @@ a {
 	-webkit-tap-highlight-color: transparent;
 }
 
+.safe-area-top {
+	padding-top: env(safe-area-inset-top);
+}
+
 ::selection {
 	background: rgb(217 119 69 / 0.25);
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<title>Bummerl</title>
+	<rect width="512" height="512" rx="112" fill="#123d35" />
+	<path
+		d="M256 72c-25 73-147 127-147 243 0 56 38 94 91 94 24 0 44-8 56-25v65h-54v34h108v-34h-54v-65c12 17 32 25 56 25 53 0 91-38 91-94 0-116-122-170-147-243Z"
+		fill="#e58b58"
+	/>
+</svg>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { navigating } from '$app/state';
+	import { onMount } from 'svelte';
 	import CardShuffleLoading from '$lib/components/card-shuffle-loading.svelte';
 	import { CARD_SHUFFLE_MIN_DURATION_MS } from '$lib/loading';
 	import { ModeWatcher } from 'mode-watcher';
@@ -8,6 +9,10 @@
 	let { children } = $props();
 	let showGameNavigationLoader = $state(false);
 	let gameNavigationStartedAt = 0;
+
+	onMount(() => {
+		if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js');
+	});
 
 	$effect(() => {
 		const isOpeningGame = /^\/app\/games\/[^/]+$/.test(navigating?.to?.url.pathname ?? '');

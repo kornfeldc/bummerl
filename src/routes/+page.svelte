@@ -45,7 +45,11 @@
 						><Button>Mit Google anmelden <ArrowRight size={17} /></Button></a
 					>
 				{/if}
-				<span class="text-sm text-muted-foreground">Kostenlos für eure Runde</span>
+				<a href={resolve('/offline')}
+					><Button variant="ghost" class="min-h-9 px-3 py-1.5 text-xs"
+						>Ohne Anmeldung spielen</Button
+					></a
+				>
 			</div>
 		</div>
 

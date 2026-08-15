@@ -40,14 +40,11 @@
 					</Button>
 				</form>
 			{:else}
-				<form method="POST" action={resolve('/login')}>
-					<button
-						type="submit"
-						class="rounded-full px-4 py-2 text-sm font-semibold text-[#fffaf2] transition hover:bg-white/10"
-					>
-						Anmelden
-					</button>
-				</form>
+				<a
+					href={resolve('/auth/google')}
+					class="rounded-full px-4 py-2 text-sm font-semibold text-[#fffaf2] transition hover:bg-white/10"
+					>Anmelden</a
+				>
 			{/if}
 		</div>
 	</div>

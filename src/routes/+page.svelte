@@ -41,9 +41,9 @@
 				{#if data.user}
 					<a href={resolve('/app')}><Button>Zu meinen Spielen <ArrowRight size={17} /></Button></a>
 				{:else}
-					<form method="POST" action={resolve('/login')}>
-						<Button type="submit">Mit Google anmelden <ArrowRight size={17} /></Button>
-					</form>
+					<a href={resolve('/auth/google')}
+						><Button>Mit Google anmelden <ArrowRight size={17} /></Button></a
+					>
 				{/if}
 				<a href={resolve('/offline')}
 					><Button variant="ghost" class="min-h-9 px-3 py-1.5 text-xs"

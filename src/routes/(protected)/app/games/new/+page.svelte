@@ -2,8 +2,10 @@
 	import { ArrowLeft, CircleHelp, Users } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import CardShuffleLoading from '$lib/components/card-shuffle-loading.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { CARD_SHUFFLE_MIN_DURATION_MS } from '$lib/loading';
 
 	let { form } = $props();
 	let playerCount = $state(2);
@@ -26,11 +28,16 @@
 	}
 
 	function handleCreate() {
+		const submittedAt = Date.now();
 		isCreating = true;
 		return async ({ update }: { update: () => Promise<void> }) => {
 			try {
 				await update();
 			} finally {
+				const remainingDuration = CARD_SHUFFLE_MIN_DURATION_MS - (Date.now() - submittedAt);
+				if (remainingDuration > 0) {
+					await new Promise((resolve) => setTimeout(resolve, remainingDuration));
+				}
 				isCreating = false;
 			}
 		};
@@ -40,6 +47,10 @@
 <svelte:head>
 	<title>Neues Spiel | bummerl</title>
 </svelte:head>
+
+{#if isCreating}
+	<CardShuffleLoading message="Spiel wird vorbereitet" />
+{/if}
 
 <main class="mx-auto max-w-3xl px-3 py-5 sm:px-8 sm:py-14">
 	<a

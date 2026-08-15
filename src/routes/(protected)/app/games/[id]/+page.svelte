@@ -11,7 +11,9 @@
 	} from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import CardShuffleLoading from '$lib/components/card-shuffle-loading.svelte';
 	import LoadingDots from '$lib/components/loading-dots.svelte';
+	import { CARD_SHUFFLE_MIN_DURATION_MS } from '$lib/loading';
 	import { pointActionGroups, type PointAction } from '$lib/game/point-actions';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
@@ -77,6 +79,7 @@
 	}
 
 	function handleScoreSubmit() {
+		const submittedAt = Date.now();
 		isScoring = true;
 		return async ({
 			result,
@@ -92,6 +95,10 @@
 					scoreSheetOpen = false;
 				}
 			} finally {
+				const remainingDuration = CARD_SHUFFLE_MIN_DURATION_MS - (Date.now() - submittedAt);
+				if (remainingDuration > 0) {
+					await new Promise((resolve) => setTimeout(resolve, remainingDuration));
+				}
 				isScoring = false;
 				pendingMode = null;
 			}
@@ -158,6 +165,10 @@
 <svelte:head>
 	<title>{gameTitle()} | bummerl</title>
 </svelte:head>
+
+{#if isScoring}
+	<CardShuffleLoading message="Punkte werden eingetragen" />
+{/if}
 
 <main class="mx-auto max-w-6xl px-3 py-5 sm:px-8 sm:py-14">
 	<a

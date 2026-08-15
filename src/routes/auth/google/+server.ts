@@ -1,6 +1,15 @@
 import { redirect, type RequestEvent } from '@sveltejs/kit';
 
 function publicOrigin({ request, url }: RequestEvent) {
+	const originatingPage = request.headers.get('origin') ?? request.headers.get('referer');
+	if (originatingPage) {
+		try {
+			return new URL(originatingPage).origin;
+		} catch {
+			// Fall back to the proxy headers when the browser did not send a valid origin.
+		}
+	}
+
 	const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
 	const host = forwardedHost ?? request.headers.get('host');
 	const forwardedProtocol = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();

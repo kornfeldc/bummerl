@@ -1,11 +1,24 @@
 <script lang="ts">
 	import { LogOut, Spade } from '@lucide/svelte';
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 
 	let { authenticated = false, userName = '' }: { authenticated?: boolean; userName?: string } =
 		$props();
+	let isLoggingOut = $state(false);
+
+	function handleLogout() {
+		isLoggingOut = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isLoggingOut = false;
+			}
+		};
+	}
 </script>
 
 <header
@@ -29,19 +42,20 @@
 		<div class="flex items-center gap-2 sm:gap-3">
 			<ThemeToggle />
 			{#if authenticated}
-				<form method="POST" action="/auth/logout">
+				<form method="POST" action="/auth/logout" use:enhance={handleLogout}>
 					<Button
 						type="submit"
+						loading={isLoggingOut}
 						variant="ghost"
 						class="border border-white/15 text-[#fffaf2] hover:bg-white/10 hover:text-white"
 					>
-						<LogOut size={16} />
+						{#if !isLoggingOut}<LogOut size={16} />{/if}
 						<span class="hidden sm:inline">Abmelden</span>
 					</Button>
 				</form>
 			{:else}
 				<a
-					href={resolve('/auth/google')}
+					href={resolve('/login')}
 					class="rounded-full px-4 py-2 text-sm font-semibold text-[#fffaf2] transition hover:bg-white/10"
 					>Anmelden</a
 				>

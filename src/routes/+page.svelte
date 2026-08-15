@@ -41,7 +41,7 @@
 				{#if data.user}
 					<a href={resolve('/app')}><Button>Zu meinen Spielen <ArrowRight size={17} /></Button></a>
 				{:else}
-					<a href={resolve('/auth/google')}
+					<a href={resolve('/login')}
 						><Button>Mit Google anmelden <ArrowRight size={17} /></Button></a
 					>
 				{/if}

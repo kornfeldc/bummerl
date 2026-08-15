@@ -1,7 +1,17 @@
 <script lang="ts">
-	import { ArrowLeft, CheckCircle2, CircleDot, Minus, Trophy, Undo2, X } from '@lucide/svelte';
+	import {
+		ArrowLeft,
+		CheckCircle2,
+		CircleDot,
+		Minus,
+		Spade,
+		Trophy,
+		Undo2,
+		X
+	} from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import LoadingDots from '$lib/components/loading-dots.svelte';
 	import { pointActionGroups, type PointAction } from '$lib/game/point-actions';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
@@ -11,7 +21,14 @@
 	let spritz = $state(false);
 	let selectedAction = $state<PointAction | null>(null);
 	let scoreSheetOpen = $state(false);
+	let isStartingRound = $state(false);
+	let isScoring = $state(false);
+	let isUndoing = $state(false);
+	let pendingMode = $state<'wins' | 'loses' | null>(null);
 	const teams = $derived([...data.game.game_teams].sort((a, b) => a.team_order - b.team_order));
+	$effect(() => {
+		if (selectedTeamId === null && teams[0]) selectedTeamId = teams[0].id;
+	});
 	const activeRound = $derived(data.rounds.find((round) => round.status === 'active'));
 	const completedRounds = $derived(
 		data.rounds.filter((round) => round.status === 'completed').reverse()
@@ -51,16 +68,16 @@
 	}
 
 	function selectTeam(teamId: string) {
-		selectedTeamId = selectedTeamId === teamId ? null : teamId;
+		selectedTeamId = teamId;
 	}
 
 	function resetScoreForm() {
-		selectedTeamId = null;
 		spritz = false;
 		selectedAction = null;
 	}
 
 	function handleScoreSubmit() {
+		isScoring = true;
 		return async ({
 			result,
 			update
@@ -68,10 +85,37 @@
 			result: { type: string };
 			update: () => Promise<void>;
 		}) => {
-			await update();
-			if (result.type === 'success') {
-				resetScoreForm();
-				scoreSheetOpen = false;
+			try {
+				await update();
+				if (result.type === 'success') {
+					resetScoreForm();
+					scoreSheetOpen = false;
+				}
+			} finally {
+				isScoring = false;
+				pendingMode = null;
+			}
+		};
+	}
+
+	function handleStartRound() {
+		isStartingRound = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isStartingRound = false;
+			}
+		};
+	}
+
+	function handleUndo() {
+		isUndoing = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isUndoing = false;
 			}
 		};
 	}
@@ -141,8 +185,10 @@
 				Runde {activeRound.round_number}
 			</div>
 		{:else}
-			<form method="POST" action="?/startRound" use:enhance>
-				<Button type="submit">Runde starten</Button>
+			<form method="POST" action="?/startRound" use:enhance={handleStartRound}>
+				<Button type="submit" loading={isStartingRound}
+					>Runde {isStartingRound ? 'wird gestartet ...' : 'starten'}</Button
+				>
 			</form>
 		{/if}
 	</div>
@@ -270,6 +316,7 @@
 					{#each teams as team (team.id)}
 						<button
 							type="button"
+							disabled={isScoring}
 							aria-pressed={selectedTeamId === team.id}
 							class={selectedTeamId === team.id
 								? 'min-h-16 rounded-xl border-2 border-primary bg-primary/10 px-3 py-3 text-left text-primary shadow-sm'
@@ -296,6 +343,7 @@
 								{#each group.actions as action (action.title)}
 									<button
 										type="button"
+										disabled={isScoring}
 										aria-pressed={selectedAction?.title === action.title}
 										class={pointActionClass(action, group.key)}
 										onclick={() => (selectedAction = action)}
@@ -333,6 +381,7 @@
 						<input
 							name="spritz"
 							type="checkbox"
+							disabled={isScoring}
 							bind:checked={spritz}
 							class="size-5 shrink-0 accent-[#d97745]"
 						/>
@@ -348,19 +397,23 @@
 						type="submit"
 						name="mode"
 						value="wins"
-						disabled={!selectedTeamId || !selectedAction}
+						onclick={() => (pendingMode = 'wins')}
+						disabled={isScoring || !selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-xl bg-[#2f8b59] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#267349] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#4da873] dark:text-[#10271b] dark:hover:bg-[#63bf89]"
 					>
-						Gewonnen
+						{#if isScoring && pendingMode === 'wins'}<LoadingDots />{/if}
+						{#if !(isScoring && pendingMode === 'wins')}Gewonnen{/if}
 					</button>
 					<button
 						type="submit"
 						name="mode"
 						value="loses"
-						disabled={!selectedTeamId || !selectedAction}
+						onclick={() => (pendingMode = 'loses')}
+						disabled={isScoring || !selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-xl bg-[#c96638] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#b8562d] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#e58b58] dark:text-[#18241f] dark:hover:bg-[#ef9b69]"
 					>
-						Verloren
+						{#if isScoring && pendingMode === 'loses'}<LoadingDots />{/if}
+						{#if !(isScoring && pendingMode === 'loses')}Verloren{/if}
 					</button>
 				</div>
 
@@ -369,19 +422,23 @@
 						type="submit"
 						name="mode"
 						value="wins"
-						disabled={!selectedTeamId || !selectedAction}
+						onclick={() => (pendingMode = 'wins')}
+						disabled={isScoring || !selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-full bg-[#2f8b59] px-3 text-sm font-bold text-white shadow-[0_12px_30px_rgb(28_91_54_/_0.3)] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#4da873] dark:text-[#10271b]"
 					>
-						Gewonnen
+						{#if isScoring && pendingMode === 'wins'}<LoadingDots />{/if}
+						{#if !(isScoring && pendingMode === 'wins')}Gewonnen{/if}
 					</button>
 					<button
 						type="submit"
 						name="mode"
 						value="loses"
-						disabled={!selectedTeamId || !selectedAction}
+						onclick={() => (pendingMode = 'loses')}
+						disabled={isScoring || !selectedTeamId || !selectedAction}
 						class="min-h-14 rounded-full bg-[#c96638] px-3 text-sm font-bold text-white shadow-[0_12px_30px_rgb(80_45_25_/_0.28)] disabled:pointer-events-none disabled:opacity-50 dark:bg-[#e58b58] dark:text-[#18241f]"
 					>
-						Verloren
+						{#if isScoring && pendingMode === 'loses'}<LoadingDots />{/if}
+						{#if !(isScoring && pendingMode === 'loses')}Verloren{/if}
 					</button>
 				</div>
 			</form>
@@ -395,11 +452,12 @@
 
 		<button
 			type="button"
+			disabled={isScoring}
 			class="fixed right-4 bottom-4 z-40 inline-flex min-h-14 items-center gap-2 rounded-full bg-primary px-5 text-sm font-bold text-primary-foreground shadow-[0_12px_30px_rgb(80_45_25_/_0.28)] md:hidden"
 			onclick={() => (scoreSheetOpen = true)}
 			aria-label="Wie war die Runde öffnen"
 		>
-			<Minus size={18} /> Punkte eintragen
+			<Spade size={18} fill="currentColor" /> Punkte eintragen
 		</button>
 
 		{#if scoreSheetOpen}
@@ -416,6 +474,7 @@
 						</p>
 						<button
 							type="button"
+							disabled={isScoring}
 							class="inline-flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
 							onclick={() => (scoreSheetOpen = false)}
 							aria-label="Punkteingabe schließen"><X size={20} /></button
@@ -428,9 +487,10 @@
 	{/if}
 
 	{#if hasScoreEvents}
-		<form method="POST" action="?/undoLastEvent" use:enhance class="mt-5">
-			<Button type="submit" variant="secondary" class="w-full sm:w-auto"
-				><Undo2 size={17} /> Letzte Aktion zurücknehmen</Button
+		<form method="POST" action="?/undoLastEvent" use:enhance={handleUndo} class="mt-5">
+			<Button type="submit" variant="secondary" loading={isUndoing} class="w-full sm:w-auto"
+				>{#if !isUndoing}<Undo2 size={17} />{/if}
+				{isUndoing ? 'Wird zurückgenommen ...' : 'Letzte Aktion zurücknehmen'}</Button
 			>
 		</form>
 	{/if}

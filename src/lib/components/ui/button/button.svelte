@@ -1,12 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils';
+	import LoadingDots from '$lib/components/loading-dots.svelte';
 
 	let {
 		class: className = '',
 		variant = 'primary',
 		type = 'button',
 		disabled = false,
+		loading = false,
 		children,
 		...rest
 	}: {
@@ -14,6 +16,7 @@
 		variant?: 'primary' | 'secondary' | 'ghost';
 		type?: 'button' | 'submit' | 'reset';
 		disabled?: boolean;
+		loading?: boolean;
 		children?: Snippet;
 		[key: string]: unknown;
 	} = $props();
@@ -21,7 +24,9 @@
 
 <button
 	{type}
-	{disabled}
+	disabled={disabled || loading}
+	aria-busy={loading}
+	aria-label={loading ? 'Wird geladen' : undefined}
 	{...rest}
 	class={cn(
 		'inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold tracking-[0.01em] transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
@@ -33,5 +38,9 @@
 		className
 	)}
 >
-	{@render children?.()}
+	{#if loading}
+		<LoadingDots />
+	{:else}
+		{@render children?.()}
+	{/if}
 </button>

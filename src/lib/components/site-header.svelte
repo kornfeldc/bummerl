@@ -1,15 +1,28 @@
 <script lang="ts">
 	import { LogOut, Spade } from '@lucide/svelte';
+	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 
 	let { authenticated = false, userName = '' }: { authenticated?: boolean; userName?: string } =
 		$props();
+	let isLoggingOut = $state(false);
+
+	function handleLogout() {
+		isLoggingOut = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isLoggingOut = false;
+			}
+		};
+	}
 </script>
 
 <header
-	class="safe-area-top sticky top-0 z-40 border-b border-white/10 bg-[#123d35]/95 text-[#fffaf2] backdrop-blur"
+	class="safe-area-top sticky top-0 z-40 border-b border-white/10 bg-[#123d35] text-[#fffaf2]"
 >
 	<div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
 		<a href={resolve('/')} class="group flex items-center gap-3" aria-label="Bummerl Startseite">
@@ -29,13 +42,14 @@
 		<div class="flex items-center gap-2 sm:gap-3">
 			<ThemeToggle />
 			{#if authenticated}
-				<form method="POST" action="/auth/logout">
+				<form method="POST" action="/auth/logout" use:enhance={handleLogout}>
 					<Button
 						type="submit"
+						loading={isLoggingOut}
 						variant="ghost"
 						class="border border-white/15 text-[#fffaf2] hover:bg-white/10 hover:text-white"
 					>
-						<LogOut size={16} />
+						{#if !isLoggingOut}<LogOut size={16} />{/if}
 						<span class="hidden sm:inline">Abmelden</span>
 					</Button>
 				</form>

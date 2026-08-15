@@ -2,10 +2,12 @@
 	import { enhance } from '$app/forms';
 	import { Activity, Archive, ArrowRight, Clock3, Plus, Sparkles, Trash2 } from '@lucide/svelte';
 	import { resolve } from '$app/paths';
+	import LoadingDots from '$lib/components/loading-dots.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 
 	let { data } = $props();
+	let archivingGameId = $state<string | null>(null);
 
 	function relativeTime(timestamp: string) {
 		const elapsedMinutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
@@ -23,6 +25,19 @@
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(timestamp));
+	}
+
+	function archiveSubmit(gameId: string) {
+		return () => {
+			archivingGameId = gameId;
+			return async ({ update }: { update: () => Promise<void> }) => {
+				try {
+					await update();
+				} finally {
+					archivingGameId = null;
+				}
+			};
+		};
 	}
 </script>
 
@@ -104,15 +119,21 @@
 									</div>
 								</div>
 							</div>
-							<form method="POST" action="?/archive" use:enhance class="shrink-0">
+							<form
+								method="POST"
+								action="?/archive"
+								use:enhance={archiveSubmit(game.id)}
+								class="shrink-0"
+							>
 								<input type="hidden" name="gameId" value={game.id} />
 								<button
 									type="submit"
+									disabled={archivingGameId === game.id}
 									class="inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-[#fff0e8] hover:text-[#a8542f] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none dark:hover:bg-[#3f3327] dark:hover:text-[#efbd92]"
 									aria-label="Spiel archivieren"
 									title="Spiel archivieren"
 								>
-									<Trash2 size={17} />
+									{#if archivingGameId === game.id}<LoadingDots />{:else}<Trash2 size={17} />{/if}
 								</button>
 							</form>
 						</div>

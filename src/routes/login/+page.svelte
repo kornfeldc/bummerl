@@ -2,10 +2,23 @@
 	import { ArrowLeft, Globe2, LockKeyhole } from '@lucide/svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import LoadingDots from '$lib/components/loading-dots.svelte';
 	import SiteHeader from '$lib/components/site-header.svelte';
 	import { Card } from '$lib/components/ui/card';
 
 	let { form } = $props();
+	let isLoggingIn = $state(false);
+
+	function handleLogin() {
+		isLoggingIn = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isLoggingIn = false;
+			}
+		};
+	}
 </script>
 
 <svelte:head>
@@ -50,13 +63,18 @@
 					{form.message}
 				</div>
 			{/if}
-			<form method="POST" use:enhance>
+			<form method="POST" use:enhance={handleLogin}>
 				<button
 					type="submit"
+					disabled={isLoggingIn}
 					class="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
-					<Globe2 size={19} class="text-[#4285f4]" />
-					Mit Google anmelden
+					{#if isLoggingIn}
+						<LoadingDots />
+					{:else}
+						<Globe2 size={19} class="text-[#4285f4]" />
+						Mit Google anmelden
+					{/if}
 				</button>
 			</form>
 			<p class="mt-6 text-center text-xs leading-5 text-muted-foreground">

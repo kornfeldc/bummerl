@@ -66,13 +66,17 @@ body {
 	min-height: 100vh;
 	margin: 0;
 	background:
-		radial-gradient(circle at 12% 0%, rgb(255 255 255 / 0.42), transparent 32rem), var(--background);
+		linear-gradient(#123d35, #123d35) top / 100% 4rem no-repeat,
+		radial-gradient(circle at 12% 0%, rgb(255 255 255 / 0.42), transparent 32rem),
+		var(--background);
 	color: var(--foreground);
 }
 
 .dark body {
 	background:
-		radial-gradient(circle at 12% 0%, rgb(69 128 105 / 0.15), transparent 32rem), var(--background);
+		linear-gradient(#123d35, #123d35) top / 100% 4rem no-repeat,
+		radial-gradient(circle at 12% 0%, rgb(69 128 105 / 0.15), transparent 32rem),
+		var(--background);
 }
 
 button,
@@ -82,6 +86,12 @@ a {
 
 .safe-area-top {
 	padding-top: env(safe-area-inset-top);
+}
+
+@media (display-mode: standalone) {
+	.safe-area-top {
+		padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+	}
 }
 
 ::selection {

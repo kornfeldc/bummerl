@@ -9,6 +9,7 @@
 	let playerCount = $state(2);
 	let playerNames = $state(['', '']);
 	let startingPoints = $state(7);
+	let isCreating = $state(false);
 	const playerGroups = $derived(
 		playerCount === 4
 			? [
@@ -22,6 +23,17 @@
 		playerCount = nextCount;
 		playerNames = Array.from({ length: nextCount }, (_, index) => playerNames[index] ?? '');
 		startingPoints = nextCount === 2 ? 7 : 24;
+	}
+
+	function handleCreate() {
+		isCreating = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			try {
+				await update();
+			} finally {
+				isCreating = false;
+			}
+		};
 	}
 </script>
 
@@ -40,7 +52,7 @@
 	<Card
 		class="mt-2 rounded-none border-0 bg-transparent shadow-none sm:mt-8 sm:rounded-[1.5rem] sm:border sm:border-border sm:bg-card sm:shadow-[0_18px_50px_rgb(40_57_48_/_0.08)]"
 	>
-		<form method="POST" use:enhance class="px-0 py-2 sm:px-10 sm:py-9">
+		<form method="POST" use:enhance={handleCreate} class="px-0 py-2 sm:px-10 sm:py-9">
 			<div class="border-b border-border pb-4 sm:pb-7">
 				<div class="flex items-start gap-4">
 					<div
@@ -78,6 +90,7 @@
 					{#each [2, 3, 4] as count (count)}
 						<button
 							type="button"
+							disabled={isCreating}
 							class={count === playerCount
 								? 'rounded-xl border-2 border-primary bg-primary/10 px-2 py-2.5 text-sm font-bold text-primary sm:px-4 sm:py-3'
 								: 'rounded-xl border border-border bg-card px-2 py-2.5 text-sm font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground sm:px-4 sm:py-3'}
@@ -168,7 +181,10 @@
 					class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground"
 					><ArrowLeft size={16} /> Abbrechen</a
 				>
-				<Button type="submit">Spiel erstellen <Users size={17} /></Button>
+				<Button type="submit" loading={isCreating}
+					>{isCreating ? 'Spiel wird erstellt ...' : 'Spiel erstellen'}
+					{#if !isCreating}<Users size={17} />{/if}</Button
+				>
 			</div>
 		</form>
 	</Card>

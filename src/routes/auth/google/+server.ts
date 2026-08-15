@@ -1,23 +1,12 @@
-import { redirect, type RequestEvent } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 
-function publicOrigin({ request, url }: RequestEvent) {
-	const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
-	const host = forwardedHost ?? request.headers.get('host');
-	const forwardedProtocol = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
-
-	if (!host) return url.origin;
-
-	return `${forwardedProtocol ?? url.protocol.replace(':', '')}://${host}`;
-}
-
-export const GET = async (event) => {
-	const { locals, url } = event;
+export const GET = async ({ locals, url }) => {
 	const next = url.searchParams.get('next');
 	const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/app';
 
 	if (!locals.supabase) redirect(303, '/');
 
-	const callbackUrl = new URL('/auth/callback', publicOrigin(event));
+	const callbackUrl = new URL('/auth/callback', url.origin);
 	callbackUrl.searchParams.set('next', destination);
 	const { data, error } = await locals.supabase.auth.signInWithOAuth({
 		provider: 'google',

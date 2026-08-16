@@ -28,14 +28,14 @@
 </script>
 
 <div
-	class="fixed inset-0 z-[70] overflow-y-auto bg-[#123d35]/75 px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-8"
+	class="round-overview fixed inset-0 z-[70] overflow-hidden bg-[#123d35]/75 px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-8"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="round-overview-title"
 >
-	<div class="mx-auto flex min-h-full max-w-2xl items-center">
+	<div class="mx-auto flex h-full min-h-0 max-w-2xl items-start sm:items-center">
 		<Card
-			class="relative w-full overflow-hidden border-[#d4c8b3] bg-[#fffdf7] shadow-[0_28px_70px_rgb(10_35_28_/_0.35)] dark:border-[#31574b] dark:bg-[#17332d]"
+			class="relative flex max-h-full w-full flex-col overflow-hidden border-[#d4c8b3] bg-[#fffdf7] shadow-[0_28px_70px_rgb(10_35_28_/_0.35)] dark:border-[#31574b] dark:bg-[#17332d]"
 		>
 			<button
 				type="button"
@@ -43,7 +43,7 @@
 				onclick={onClose}
 				aria-label="Rundenübersicht schließen"><X size={21} /></button
 			>
-			<div class="winner-header bg-[#123d35] px-5 py-7 text-[#fffaf2] sm:px-9 sm:py-10">
+			<div class="winner-header shrink-0 bg-[#123d35] px-5 py-7 text-[#fffaf2] sm:px-9 sm:py-10">
 				<div class="winner-confetti" aria-hidden="true">
 					{#each confettiPieces as piece (piece)}
 						<span
@@ -70,7 +70,7 @@
 				</div>
 			</div>
 
-			<div class="p-5 sm:p-9">
+			<div class="flex min-h-0 flex-1 flex-col p-5 sm:p-9">
 				<section aria-labelledby="bummerl-title">
 					<div
 						class="flex items-start gap-3 rounded-2xl border border-[#d7a282] bg-[#fff0e8] p-4 dark:border-[#795441] dark:bg-[#3f3327]"
@@ -122,14 +122,16 @@
 					</div>
 				</section>
 
-				<section class="mt-7" aria-labelledby="events-title">
+				<section class="mt-7 flex min-h-0 flex-1 flex-col" aria-labelledby="events-title">
 					<h2
 						id="events-title"
 						class="text-xs font-bold tracking-[0.15em] text-muted-foreground uppercase"
 					>
 						Gespielte Aktionen
 					</h2>
-					<div class="mt-3 divide-y divide-border rounded-xl border border-border bg-background/50">
+					<div
+						class="mt-3 min-h-0 flex-1 divide-y divide-border overflow-y-auto rounded-xl border border-border bg-background/50"
+					>
 						{#each round.events as event, index (event.id)}
 							<div class="flex items-center gap-3 px-3 py-3 sm:px-4">
 								<span
@@ -156,13 +158,18 @@
 					</div>
 				</section>
 
-				<Button class="mt-8 w-full" onclick={onClose}>Weiter zum Spiel</Button>
+				<Button class="mt-5 w-full shrink-0" onclick={onClose}>Weiter zum Spiel</Button>
 			</div>
 		</Card>
 	</div>
 </div>
 
 <style>
+	.round-overview {
+		padding-top: max(1.5rem, calc(env(safe-area-inset-top) + 1rem));
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+	}
+
 	.winner-header {
 		isolation: isolate;
 		position: relative;

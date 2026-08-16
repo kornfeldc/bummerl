@@ -18,6 +18,10 @@ export type LocalEvent = {
 	points: number;
 
 	targetTeamIds: string[];
+
+	selectedTeamId: string;
+
+	mode: 'wins' | 'loses';
 };
 
 export type LocalRound = {
@@ -170,7 +174,11 @@ export function applyLocalEvent(
 		id: id(),
 		title: spritz ? `${title} · Gspritzt` : title,
 		points: appliedPoints,
-		targetTeamIds
+		targetTeamIds,
+
+		selectedTeamId,
+
+		mode
 	});
 
 	const outcome = resolveRoundOutcome(

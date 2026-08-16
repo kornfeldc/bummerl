@@ -37,6 +37,8 @@ type Round = {
 		id: string;
 		title: string;
 		points: number;
+		mode: 'wins' | 'loses' | null;
+		selected_team_id: string | null;
 		created_at: string;
 		round_event_players: Array<{ player_id: string }>;
 	}>;
@@ -59,7 +61,7 @@ export const load = async ({ locals, params }) => {
 	const { data: roundData, error: roundError } = await locals.supabase
 		.from('rounds')
 		.select(
-			'id, round_number, starting_points, status, winner_team_id, started_at, completed_at, round_player_scores(player_id, remaining_points), round_events(id, title, points, created_at, round_event_players(player_id))'
+			'id, round_number, starting_points, status, winner_team_id, started_at, completed_at, round_player_scores(player_id, remaining_points), round_events(id, title, points, mode, selected_team_id, created_at, round_event_players(player_id))'
 		)
 		.eq('game_id', params.id)
 		.order('round_number', { ascending: true });
